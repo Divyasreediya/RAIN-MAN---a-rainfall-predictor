@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Rainfall Analysis</title>
+    <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script type="text/javascript">
+        $(document).ready(function() {
+            $('#status').text("ready").show();
+            $('#show_all').on('click',function() {
+                $('#status').text("requesting....").show();
+                $.ajax({url:"/show_all",
+                        type:"GET",
+                        success: function(data) {
+                            $('#status').text(data.result).show();
+                        }
+                });
+            });
+            $('#p_g').on('click',function() {
+                $('#status').text("requesting....").show();
+                $.ajax({url:"/plot_graph",
+                        type:"GET",
+                        data:{  a_no : $('#a_no').val(),
+                                x_a : $('#x_a').val() },
+                        success: function(data) {
+                            $('#status').text(data.result).show();
+                        }
+                });
+            });
+            $('#p').on('click',function() {
+                $('#status').text("requesting....").show();
+				ano = parseInt($('#p_a_no').val());
+                $.ajax({url:"/predict",
+                        type:"GET",
+                        data:{  month : $('#m_no').val(),
+                                year : $('#y_no').val(),
+                                a_no : ano },
+                        success: function(data) {
+                            $('#status').text(data.result).show();
+                            $('#predicted_val').text(data.predicted).show();
+                        }
+                });
+            });
+            $('#s_p_g').on('click',function() {
+                $('#status').text("requesting....").show();
+                $.ajax({url:"/show_in_graph",
+                        type:"GET",
+                        data:{  a_no : $('#p_a_no').val() },
+                        success: function(data) {
+                            $('#status').text(data.result).show();
+                        }
+                });
+            });
+        });
+    </script>
+    <script type="text/javascript">
+    window.onload = function init_ui() {
+			var maop = ""
+            var aop = "<option>"+ "----Region----" +"</option>";
+			var mop = "<option>"+ "All Months" +"</option>";
+            var pyop = "<option>"+ "All Years" +"</option>";
+            var months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+            var area = ["ANDAMAN & NICOBAR ISLANDS","ARUNACHAL PRADESH","ASSAM & MEGHALAYA","NAGA MANI MIZO TRIPURA",
+                    "SUB HIMALAYAN WEST BENGAL & SIKKIM","GANGETIC WEST BENGAL","ORISSA","JHARKHAND","BIHAR","EAST UTTAR PRADESH",
+                    "WEST UTTAR PRADESH","UTTARAKHAND","HARYANA DELHI & CHANDIGARH","PUNJAB","HIMACHAL PRADESH","JAMMU & KASHMIR",
+                    "WEST RAJASTHAN","EAST RAJASTHAN","WEST MADHYA PRADESH","EAST MADHYA PRADESH","GUJARAT REGION",
+                    "SAURASHTRA & KUTCH","KONKAN & GOA","MADHYA MAHARASHTRA","MATATHWADA","VIDARBHA","CHHATTISGARH",
+                    "COASTAL ANDHRA PRADESH", "TELANGANA", "RAYALSEEMA", "TAMIL NADU", "COASTAL KARNATAKA",
+                    "NORTH INTERIOR KARNATAKA", "SOUTH INTERIOR KARNATAKA", "KERALA", "LAKSHADWEEP"];
+            for(var y=2016; y<2026; y++){
+                pyop += "<option>"+ y +"</option>";
+            }
+			for(var m=0; m<12; m++){
+                mop += "<option>"+ months[m] +"</option>";
+            }
+			for (a in area) {
+                aop += "<option>"+ area[a] +"</option>";
+				maop += "<option>"+ area[a] +"</option>";
+            }
+            document.getElementById("single_area").innerHTML = aop;
+            document.getElementById("multiple_area").innerHTML = maop;
+            document.getElementById("s_p_m").innerHTML = mop;
+            document.getElementById("s_p_y").innerHTML = pyop;
+            document.getElementById("s_p_a").innerHTML = aop;
+		}
+		function plot_graph() {
+			var x,ym,a,ma;
+			if(document.getElementById("x_a_y").checked) {
+				x = "years";
+			}
+			else {
+				x = "months";
+			}
+			if(document.getElementById("m_a").checked) {
+				var sela = new Array();
+				ma = document.getElementById("multiple_area");
+				for(var i = 0,c = 0; i < ma.options.length; i++) {
+					if(ma.options[i].selected) {
+						sela[c] = ma.options[i].value;
+						c++;
+					}
+				}
+				a = "multiple";
+			}
+			else {
+				var sela = document.getElementById("single_area").value;
+				a = "single";
+			}
+			var info = x+" , "+a+" , "+sela;
+			document.getElementById("view_data_info").innerHTML = info;
+		}
+		function show_predict_graph() {
+			var spm = document.getElementById("s_p_m").value;
+            var spy = document.getElementById("s_p_y").value;
+            var spa = document.getElementById("s_p_a").value;
+			var info = spm+" , "+spy+" , "+spa;
+            document.getElementById("predict_info").innerHTML = info;
+		}
+		function xaxis_changed() {
+			if(document.getElementById("x_a_m").checked) {
+				document.getElementById("x_a").value = "month";
+			}
+			else {
+				document.getElementById("x_a").value = "year";
+			}
+		}
+		function area_changed() {
+			if(document.getElementById("s_a").checked) {
+				document.getElementById("single_area").disabled = false;
+				document.getElementById("multiple_area").disabled = true;
+				sa = document.getElementById("single_area");
+				for(var i = 1; i < sa.options.length; i++) {
+					if(sa.options[i].selected) {
+						document.getElementById("a_no").value = i-1;
+						break;
+					}
+				}
+			}
+			else {
+				document.getElementById("multiple_area").disabled = false;
+				document.getElementById("single_area").disabled = true;
+				var areas = new Array();
+				ma = document.getElementById("multiple_area");
+				for(var i = 0,c = 0; i < ma.options.length; i++) {
+					if(ma.options[i].selected) {
+						areas[c] = i;
+						c++;
+					}
+				}
+				document.getElementById("a_no").value = areas;
+			}
+			if(document.getElementById("a_no").value >= 0) {
+				document.getElementById("p_g").disabled = false;
+			}
+			else {
+				document.getElementById("p_g").disabled = true;
+			}
+		}
+		function p_month_changed() {
+			pm = document.getElementById("s_p_m");
+			for(var i = 0; i < pm.options.length; i++) {
+				if(pm.options[i].selected) {
+					document.getElementById("m_no").value = i-1;
+					break;
+				}
+			}
+			if(document.getElementById("m_no").value >= 0) {
+				document.getElementById("p").disabled = false;
+			}
+			else {
+				document.getElementById("p").disabled = true;
+			}
+		}
+		function p_year_changed() {
+			py = document.getElementById("s_p_y");
+			for(var i = 0; i < py.options.length; i++) {
+				if(py.options[i].selected) {
+					document.getElementById("y_no").value = i-1;
+					break;
+				}
+			}
+			if(document.getElementById("y_no").value >= 0) {
+				document.getElementById("p").disabled = false;
+			}
+			else {
+				document.getElementById("p").disabled = true;
+			}
+		}
+		function p_area_changed() {
+			pa = document.getElementById("s_p_a");
+			for(var i = 0; i < pa.options.length; i++) {
+				if(pa.options[i].selected) {
+					document.getElementById("p_a_no").value = i-1;
+					break;
+				}
+			}
+			if(document.getElementById("p_a_no").value >= 0) {
+				document.getElementById("p").disabled = false;
+			}
+			else {
+				document.getElementById("p").disabled = true;
+			}
+		}
+		function predict() {
+			var m,y,a,res;
+			a=document.getElementById("p_a_no").value;
+			y=document.getElementById("y_no").value;
+			m=document.getElementById("m_no").value;
+			res = m+","+y+","+a;
+			document.getElementById("predict_info").value = res;
+		}
+	</script>
+	<style type="text/css">
+		tab { padding-left: 1em; }
+		tab0 { padding-left: 2em; }
+		tab1 { padding-left: 4em; }
+		tab2 { padding-left: 8em; }
+		tab3 { padding-left: 12em; }
+		tab4 { padding-left: 16em; }
+		tab5 { padding-left: 20em; }
+		tab6 { padding-left: 24em; }
+		tab7 { padding-left: 28em; }
+		tab8 { padding-left: 32em; }
+		tab9 { padding-left: 36em; }
+		tab10 { padding-left: 40em; }
+		tab11 { padding-left: 44em; }
+		tab12 { padding-left: 48em; }
+		tab13 { padding-left: 52em; }
+		tab14 { padding-left: 56em; }
+		tab15 { padding-left: 60em; }
+		tab16 { padding-left: 64em; }
+		body {	background-image: url("bg.jpg");
+				background-repeat: no-repeat; }
+	</style>
+</head>
+<body>
+	<div>
+		<center><h1><b><u>RAINFALL ANALYSIS</u></b></h1></center>
+	</div>
+	<form action = "http://localhost:5000/run" method = "GET">
+		<div style = "width:49%; height:650px; float:left;">
+			<p> <center> <h2><b>Historical Rainfall Data</b></h2> </center> </p>
+            <p> <center><h4><input type="button" id="show_all" value="Show All"
+					style="	opacity: 0.75; 
+							background-color: white;
+							font-size: 20px;
+							font-weight: bold;
+							border: solid;
+							border-bottom-color: black;
+							border-left-color: black;
+							color: #4CAF50;
+							padding: 8px;
+							text-align: center;
+							text-decoration: none;
+							display: inline-block;
+							margin: 4px 2px;
+							border-radius: 12px;"> <br>
+			<b>OR</b></h4> </center> 
+			 <h2> Customize </h2> </p>
+			<p><h3> <tab0><b>Select Data On X-axis
+                    <tab1> <input type="radio" name="xaxis" id="x_a_m" value="months" checked onchange="xaxis_changed()">Months
+                    <tab1> <input type="radio" name="xaxis" id="x_a_y" value="years" onchange="xaxis_changed()">Years<br></b></h3>
+			</p>
+			<p> <h3><tab0>Select Region<tab0> <input type="radio" name="area" id="s_a" checked onchange="area_changed()">single
+				<tab0> <select id="single_area" onchange="area_changed()"></select> </h3> </p>
+			<p> <h3><tab2><tab0><input type="radio" name="area" id="m_a" onchange="area_changed()">multiple </h3> 
+				<tab4><tab0>&nbsp; <select id="multiple_area" size = 13 multiple disabled onchange="area_changed()"></select> </p>
+			<tab> <center> <input type="button" id="p_g" value="Plot graph" onclick="plot_graph()" disabled
+					style="	opacity: 0.75;
+							background-color: white;
+							font-size: 20px;
+							font-weight: bold;
+							border: solid;
+							border-bottom-color: black;
+							border-left-color: black;
+							color: #4CAF50;
+							padding: 10px;
+							text-align: center;
+							text-decoration: none;
+							display: inline-block;
+							border-radius: 12px;"> </center>
+		</div>
+		
+		<div style = "width:50%; float:right; border-left: 3px solid blue; height: 650px;">
+			<p> <center> <h2><b>Prediction</b></h2> </center> </p>
+			<p> <br> <h3> <tab0> <select id="s_p_m" onchange="p_month_changed()"></select>
+				<tab0> <select id="s_p_y" onchange="p_year_changed()"></select>
+				<tab0> <select id="s_p_a" onchange="p_area_changed()"></select> </h3> </p><br>
+			<h3> <p> <tab0> <input type="button" id="p" value="Predict" onclick="predict()" 
+					style="	opacity: 0.75; 
+							background-color: white;
+							font-size: 20px;
+							font-weight: bold;
+							border: solid;
+							border-bottom-color: black;
+							border-left-color: black;
+							color: #4CAF50;
+							padding: 10px;
+							text-align: center;
+							text-decoration: none;
+							display: inline-block;
+							margin: 1px 5px;
+							border-radius: 12px;">
+				<tab1> <label id="predicted_val"><tab1>Accuracy:<label id="accuracy_val"> </p> </h3> <br>
+			<p> <label id="view_data_info"> </label> <br>
+            <label id="predict_info"> </label> <br>
+			<label id="status"> </label> <br> </p>
+			<center> <input type="button" id="s_p_g" value="Show In Graph" onclick="show_predict_graph()"
+					style="	opacity: 0.75; 
+							background-color: white;
+							font-size: 20px;
+							font-weight: bold;
+							border: solid;
+							border-bottom-color: black;
+							border-left-color: black;
+							color: #4CAF50;
+							padding: 10px;
+							text-align: center;
+							text-decoration: none;
+							display: inline-block;
+							margin: 230px;
+							border-radius: 12px;"> </center>
+		
+		<input type="hidden" id="a_no" value=""/>
+		<input type="hidden" id="x_a" value="month"/>
+		<input type="hidden" id="m_no" value=""/>
+		<input type="hidden" id="y_no" value=""/>
+		<input type="hidden" id="p_a_no" value=""/>
+		</div>
+
+	</form>
+</body>
+</html>
